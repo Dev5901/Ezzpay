@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "776982379332",
+    "project_id": "ezzpay-c580e",
+    "storage_bucket": "ezzpay-c580e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:776982379332:android:23693c058cf92765b8f511",
+        "android_client_info": {
+          "package_name": "com.example.ezzpay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgfqRsEZZsdqgSpEJLTEV7nm_YqOCk5sA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

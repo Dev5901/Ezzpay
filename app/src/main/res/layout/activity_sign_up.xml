@@ -1,0 +1,92 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- First Name -->
+    <EditText
+        android:id="@+id/signup_first_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="First Name"
+        android:inputType="text" />
+
+    <!-- Last Name -->
+    <EditText
+        android:id="@+id/signup_last_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Last Name"
+        android:inputType="text" />
+
+    <!-- Email -->
+    <EditText
+        android:id="@+id/signup_email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email"
+        android:inputType="textEmailAddress" />
+
+    <!-- Phone Number -->
+    <EditText
+        android:id="@+id/signup_phone_number"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Phone Number (Canada)"
+        android:inputType="phone" />
+
+    <!-- Send OTP Button -->
+    <Button
+        android:id="@+id/send_otp_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Send OTP" />
+
+    <!-- OTP Field -->
+    <EditText
+        android:id="@+id/signup_otp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter OTP"
+        android:inputType="number" />
+
+    <!-- Ethereum Wallet Spinner -->
+    <Spinner
+        android:id="@+id/ethereum_wallet_dropdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <!-- Wallet Address -->
+    <EditText
+        android:id="@+id/wallet_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Wallet Address"
+        android:visibility="gone" />
+
+    <!-- Generate Wallet Button -->
+    <Button
+        android:id="@+id/generate_wallet_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Generate Wallet"
+        android:visibility="gone" />
+
+    <!-- Sign Up Button -->
+    <Button
+        android:id="@+id/signup_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Sign Up" />
+
+    <!-- Login Redirect Text -->
+    <TextView
+        android:id="@+id/loginRedirectText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_gravity="center"
+        android:text="Already have an account? Log in here"
+        android:textColor="@android:color/holo_blue_dark" />
+</LinearLayout>
