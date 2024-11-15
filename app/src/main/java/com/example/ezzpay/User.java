@@ -1,31 +1,22 @@
 package com.example.ezzpay;
 
-
-
-  // Firebase Realtime Database annotation to ignore unknown fields
 public class User {
 
     private String userId;
-    private String firstName;
-    private String lastName;
+    private String fullName;
     private String email;
-    private String phoneNumber;
-    private String ethereumWallet;
-    private String walletAddress;
+    private String contactNumber;
 
     // Default constructor required for calls to DataSnapshot.getValue(User.class)
     public User() {
     }
 
     // Parameterized constructor
-    public User(String userId, String firstName, String lastName, String email, String phoneNumber, String ethereumWallet, String walletAddress) {
+    public User(String userId, String fullName, String email, String contactNumber) {
         this.userId = userId;
-        this.firstName = firstName;
-        this.lastName = lastName;
+        this.fullName = fullName;
         this.email = email;
-        this.phoneNumber = phoneNumber;
-        this.ethereumWallet = ethereumWallet;
-        this.walletAddress = walletAddress;
+        this.contactNumber = contactNumber;
     }
 
     // Getters and Setters
@@ -37,20 +28,12 @@ public class User {
         this.userId = userId;
     }
 
-    public String getFirstName() {
-        return firstName;
+    public String getFullName() {
+        return fullName;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
     public String getEmail() {
@@ -61,28 +44,12 @@ public class User {
         this.email = email;
     }
 
-    public String getPhoneNumber() {
-        return phoneNumber;
+    public String getContactNumber() {
+        return contactNumber;
     }
 
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
-    public String getEthereumWallet() {
-        return ethereumWallet;
-    }
-
-    public void setEthereumWallet(String ethereumWallet) {
-        this.ethereumWallet = ethereumWallet;
-    }
-
-    public String getWalletAddress() {
-        return walletAddress;
-    }
-
-    public void setWalletAddress(String walletAddress) {
-        this.walletAddress = walletAddress;
+    public void setContactNumber(String contactNumber) {
+        this.contactNumber = contactNumber;
     }
 
     // Optional: Override toString() for debugging purposes
@@ -90,12 +57,9 @@ public class User {
     public String toString() {
         return "User{" +
                 "userId='" + userId + '\'' +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
+                ", fullName='" + fullName + '\'' +
                 ", email='" + email + '\'' +
-                ", phoneNumber='" + phoneNumber + '\'' +
-                ", ethereumWallet='" + ethereumWallet + '\'' +
-                ", walletAddress='" + walletAddress + '\'' +
+                ", contactNumber='" + contactNumber + '\'' +
                 '}';
     }
 }

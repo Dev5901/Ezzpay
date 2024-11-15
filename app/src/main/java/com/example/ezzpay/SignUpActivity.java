@@ -1,38 +1,32 @@
 package com.example.ezzpay;
 
-import android.content.Intent;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.DocumentReference;
+
 import android.os.Bundle;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.ezzpay.R;
-import com.google.firebase.FirebaseException;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.PhoneAuthCredential;
-import com.google.firebase.auth.PhoneAuthOptions;
-import com.google.firebase.auth.PhoneAuthProvider;
-import com.google.firebase.firestore.FirebaseFirestore;
+import android.content.Intent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
-import java.util.concurrent.TimeUnit;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class SignUpActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
-    private EditText firstName, lastName, email, phoneNumber, otpField, walletAddress;
-    private Spinner ethereumWalletDropdown;
-    private Button signupButton, generateWalletButton, sendOtpButton;
+    private EditText signupEmail, signupPassword, confirmPassword, fullName, contactNumber;
+    private Button signupButton;
     private TextView loginRedirectText;
-    private String verificationId;
-    private PhoneAuthProvider.ForceResendingToken resendToken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,142 +34,73 @@ public class SignUpActivity extends AppCompatActivity {
         setContentView(R.layout.activity_sign_up);
 
         auth = FirebaseAuth.getInstance();
-        firestore = FirebaseFirestore.getInstance();
+        firestore = FirebaseFirestore.getInstance(); // Initialize Firestore
 
-        // Initialize fields
-        firstName = findViewById(R.id.signup_first_name);
-        lastName = findViewById(R.id.signup_last_name);
-        email = findViewById(R.id.signup_email);
-        phoneNumber = findViewById(R.id.signup_phone_number);
-        otpField = findViewById(R.id.signup_otp);
-        ethereumWalletDropdown = findViewById(R.id.ethereum_wallet_dropdown);
-        walletAddress = findViewById(R.id.wallet_address);
+        // Initialize all the input fields
+        signupEmail = findViewById(R.id.signup_email);
+        signupPassword = findViewById(R.id.signup_password);
+        confirmPassword = findViewById(R.id.signup_confirm_password);
+        fullName = findViewById(R.id.signup_full_name);
+        contactNumber = findViewById(R.id.signup_contact_number);
+
         signupButton = findViewById(R.id.signup_button);
-        generateWalletButton = findViewById(R.id.generate_wallet_button);
-        sendOtpButton = findViewById(R.id.send_otp_button);
         loginRedirectText = findViewById(R.id.loginRedirectText);
 
-        // Handle Ethereum Wallet Dropdown
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.ethereum_wallet_options, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        ethereumWalletDropdown.setAdapter(adapter);
-
-        ethereumWalletDropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selection = parent.getItemAtPosition(position).toString();
-                if ("Yes".equals(selection)) {
-                    walletAddress.setVisibility(View.VISIBLE);
-                    generateWalletButton.setVisibility(View.GONE);
-                } else {
-                    walletAddress.setVisibility(View.GONE);
-                    generateWalletButton.setVisibility(View.VISIBLE);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });
-
-        // Send OTP
-        sendOtpButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String phone = phoneNumber.getText().toString().trim();
-                if (phone.isEmpty() || phone.length() != 10) {
-                    phoneNumber.setError("Enter a valid phone number");
-                    return;
-                }
-
-                String fullPhoneNumber = "+1" + phone; // Assuming CANADA (+1)
-
-                PhoneAuthOptions options =
-                        PhoneAuthOptions.newBuilder(auth)
-                                .setPhoneNumber(fullPhoneNumber)
-                                .setTimeout(60L, TimeUnit.SECONDS)
-                                .setActivity(SignUpActivity.this)
-                                .setCallbacks(new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-                                    @Override
-                                    public void onVerificationCompleted(PhoneAuthCredential credential) {
-                                        Toast.makeText(SignUpActivity.this, "Verification Completed", Toast.LENGTH_SHORT).show();
-                                        // Auto-retrieval or instant verification
-                                        signInWithPhoneAuthCredential(credential);
-                                    }
-
-                                    @Override
-                                    public void onVerificationFailed(FirebaseException e) {
-                                        Toast.makeText(SignUpActivity.this, "Verification Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                                    }
-
-                                    @Override
-                                    public void onCodeSent(String verificationId, PhoneAuthProvider.ForceResendingToken token) {
-                                        SignUpActivity.this.verificationId = verificationId;
-                                        resendToken = token;
-                                        Toast.makeText(SignUpActivity.this, "OTP Sent", Toast.LENGTH_SHORT).show();
-                                    }
-                                })
-                                .build();
-                PhoneAuthProvider.verifyPhoneNumber(options);
-            }
-        });
-
-        // Sign Up Button
         signupButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                String otp = otpField.getText().toString().trim();
-                if (otp.isEmpty()) {
-                    otpField.setError("Enter the OTP");
-                    return;
-                }
+            public void onClick(View view) {
+                String userEmail = signupEmail.getText().toString().trim();
+                String userPassword = signupPassword.getText().toString().trim();
+                String userConfirmPassword = confirmPassword.getText().toString().trim();
+                String userFullName = fullName.getText().toString().trim();
+                String userContactNumber = contactNumber.getText().toString().trim();
 
-                verifyOtp(otp);
+                if (validateFields(userPassword, userConfirmPassword)) {
+                    // Create user in Firebase Authentication
+                    auth.createUserWithEmailAndPassword(userEmail, userPassword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
+                        @Override
+                        public void onComplete(@NonNull Task<AuthResult> task) {
+                            if (task.isSuccessful()) {
+                                // Store additional user data in Firestore
+                                String userId = auth.getCurrentUser().getUid();
+                                User user = new User(userId, userFullName, userEmail, userContactNumber);
+
+                                // Save user data to Firestore
+                                DocumentReference userRef = firestore.collection("Users").document(userId);
+                                userRef.set(user).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                    @Override
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        if (task.isSuccessful()) {
+                                            Toast.makeText(SignUpActivity.this, "SignUp Successful", Toast.LENGTH_SHORT).show();
+                                            startActivity(new Intent(SignUpActivity.this, LoginActivity.class)); // Redirect to login
+                                        } else {
+                                            Toast.makeText(SignUpActivity.this, "Error: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+                                });
+                            } else {
+                                Toast.makeText(SignUpActivity.this, "SignUp Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    });
+                }
             }
         });
 
-        // Login Redirect
-        loginRedirectText.setOnClickListener(view -> startActivity(new Intent(SignUpActivity.this, MainActivity.class)));
+        loginRedirectText.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(SignUpActivity.this, LoginActivity.class));
+            }
+        });
     }
 
-    private void verifyOtp(String otp) {
-        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, otp);
-        signInWithPhoneAuthCredential(credential);
-    }
-
-    private void signInWithPhoneAuthCredential(PhoneAuthCredential credential) {
-        auth.signInWithCredential(credential)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        saveUserDataToFirestore();
-                    } else {
-                        Toast.makeText(SignUpActivity.this, "Authentication Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
-    private void saveUserDataToFirestore() {
-        String userId = auth.getCurrentUser().getUid();
-
-        com.example.ezzpay.User user = new User(
-                userId,
-                firstName.getText().toString().trim(),
-                lastName.getText().toString().trim(),
-                email.getText().toString().trim(),
-                phoneNumber.getText().toString().trim(),
-                ethereumWalletDropdown.getSelectedItem().toString(),
-                walletAddress.getText().toString().trim()
-        );
-
-        firestore.collection("Users").document(userId).set(user)
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(SignUpActivity.this, "User Registered", Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(SignUpActivity.this, MainActivity.class));
-                    } else {
-                        Toast.makeText(SignUpActivity.this, "Failed to save user data", Toast.LENGTH_SHORT).show();
-                    }
-                });
+    private boolean validateFields(String password, String confirmPassword) {
+        if (!password.equals(confirmPassword)) {
+            Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        // Additional validation logic can be added here for other fields
+        return true;
     }
 }

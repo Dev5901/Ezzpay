@@ -1,3 +1,19 @@
 <resources>
-    <string name="app_name">Ezzpay</string>
+    <string name="app_name">EzPay</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome !"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="login_text"><u>Already a User? Login</u></string>
+    <string name="signup_text"><u>Not yet registered? SignUp</u></string>
+    <string-array name="bank_names">
+        <item>RBC</item>
+        <item>CIBC</item>
+        <item>Soctia Bank</item>
+    </string-array>
 </resources>
