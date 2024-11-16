@@ -11,6 +11,7 @@
     <string name="login_failed">"Login failed"</string>
     <string name="login_text"><u>Already a User? Login</u></string>
     <string name="signup_text"><u>Not yet registered? SignUp</u></string>
+    <string name="add_wallet">Add Wallet</string>
     <string-array name="bank_names">
         <item>RBC</item>
         <item>CIBC</item>
