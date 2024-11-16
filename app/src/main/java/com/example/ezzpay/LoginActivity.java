@@ -29,6 +29,10 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(getResources().getColor(R.color.appBg));
+        }
+
         // Initialize Firebase Auth and UI elements
         auth = FirebaseAuth.getInstance();
         loginEmail = findViewById(R.id.login_email);
