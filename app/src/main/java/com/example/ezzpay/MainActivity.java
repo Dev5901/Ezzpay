@@ -1,10 +1,13 @@
 package com.example.ezzpay;
 
 import android.app.Dialog;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,8 +19,15 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.SetOptions;
+import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
+import com.journeyapps.barcodescanner.BarcodeEncoder;
 
+import java.io.ByteArrayOutputStream;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
-    private Button addWalletButton;
+    private Button addWalletButton, sendButton, receiveButton;
     private View cardView;
     private TextView usernameTextView, walletIdTextView, walletBalanceTextView;
 
@@ -49,11 +59,14 @@ public class MainActivity extends AppCompatActivity {
         usernameTextView = findViewById(R.id.username);
         walletIdTextView = findViewById(R.id.wallet_id);
         walletBalanceTextView = findViewById(R.id.wallet_balance);
-        // Check Wallet Status
+        sendButton = findViewById(R.id.send_button);
+        receiveButton = findViewById(R.id.receive_button);
         checkWalletStatus();
 
         // Handle Add Wallet Button Click
         addWalletButton.setOnClickListener(view -> createWalletForUser());
+
+        receiveButton.setOnClickListener(view -> displayQRCode());
     }
 
     private void checkWalletStatus() {
@@ -126,6 +139,8 @@ public class MainActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     Toast.makeText(this, "Failed to create wallet: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+
+        generateAndUploadQRCode(walletId, privateKey, userId);
     }
 
     private String generateWalletId() {
@@ -153,5 +168,60 @@ public class MainActivity extends AppCompatActivity {
         }
         return privateKey.toString();
     }
-}
 
+    private void generateAndUploadQRCode(String walletId, String privateKey, String userId) {
+        String qrContent = "Wallet ID: " + walletId + "\nPrivate Key: " + privateKey;
+
+        try {
+            // Generate QR code
+            MultiFormatWriter writer = new MultiFormatWriter();
+            BitMatrix matrix = writer.encode(qrContent, BarcodeFormat.QR_CODE, 350, 350);
+            BarcodeEncoder encoder = new BarcodeEncoder();
+            Bitmap bitmap = encoder.createBitmap(matrix);
+
+            // Convert bitmap to byte array
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
+            byte[] data = baos.toByteArray();
+
+            // Upload QR code to Firebase Storage
+            FirebaseStorage storage = FirebaseStorage.getInstance();
+            StorageReference storageRef = storage.getReference().child("WalletQRs/" + userId + ".png");
+
+            UploadTask uploadTask = storageRef.putBytes(data);
+            uploadTask.addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Toast.makeText(MainActivity.this, "QR Code Uploaded", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainActivity.this, "QR Upload Failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(MainActivity.this, "QR Code Generation Failed", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void displayQRCode() {
+        String userId = auth.getCurrentUser().getUid();
+        StorageReference qrCodeRef = FirebaseStorage.getInstance().getReference().child("WalletQRs/" + userId + ".png");
+
+        qrCodeRef.getBytes(1024 * 1024) // Adjust size as needed
+                .addOnSuccessListener(bytes -> {
+                    Bitmap qrBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+                    // Show QR code in a dialog
+                    Dialog qrDialog = new Dialog(MainActivity.this);
+                    qrDialog.setContentView(R.layout.qr_code_image_view);
+
+                    ImageView qrImageView = qrDialog.findViewById(R.id.qr_code_image_view);
+                    qrImageView.setImageBitmap(qrBitmap);
+
+                    qrDialog.show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(MainActivity.this, "Failed to fetch QR code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+}
