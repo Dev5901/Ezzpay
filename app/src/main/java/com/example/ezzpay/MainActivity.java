@@ -231,25 +231,55 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+//    private void displayQRCode() {
+//        String userId = auth.getCurrentUser().getUid();
+//        StorageReference qrCodeRef = FirebaseStorage.getInstance().getReference().child("WalletQRs/" + userId + ".png");
+//
+//        qrCodeRef.getBytes(1024 * 1024) // Adjust size as needed
+//                .addOnSuccessListener(bytes -> {
+//                    Bitmap qrBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+//
+//                    // Show QR code in a dialog
+//                    Dialog qrDialog = new Dialog(MainActivity.this);
+//                    qrDialog.setContentView(R.layout.qr_code_image_view);
+//
+//                    ImageView qrImageView = qrDialog.findViewById(R.id.qr_code_image_view);
+//                    qrImageView.setImageBitmap(qrBitmap);
+//
+//                    qrDialog.show();
+//                })
+//                .addOnFailureListener(e -> {
+//                    Toast.makeText(MainActivity.this, "Failed to fetch QR code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+//                });
+//    }
+
     private void displayQRCode() {
         String userId = auth.getCurrentUser().getUid();
-        StorageReference qrCodeRef = FirebaseStorage.getInstance().getReference().child("WalletQRs/" + userId + ".png");
+        DocumentReference userRef = firestore.collection("Users").document(userId);
 
-        qrCodeRef.getBytes(1024 * 1024) // Adjust size as needed
-                .addOnSuccessListener(bytes -> {
-                    Bitmap qrBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        userRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                DocumentSnapshot document = task.getResult();
+                if (document != null && document.exists()) {
+                    String qrCodeUrl = document.getString("qrCodeUrl");
+                    if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
+                        // Open the dialog to show QR code
+                        showQRCodeDialog(qrCodeUrl);
+                    }
+                }
+            }
+        });
+    }
 
-                    // Show QR code in a dialog
-                    Dialog qrDialog = new Dialog(MainActivity.this);
-                    qrDialog.setContentView(R.layout.qr_code_image_view);
+    private void showQRCodeDialog(String qrCodeUrl) {
+        Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.qr_code_image_view);
 
-                    ImageView qrImageView = qrDialog.findViewById(R.id.qr_code_image_view);
-                    qrImageView.setImageBitmap(qrBitmap);
+        ImageView qrImageView = dialog.findViewById(R.id.qr_code_image_view);
 
-                    qrDialog.show();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(MainActivity.this, "Failed to fetch QR code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                });
+        // Load and display the QR code from URL
+        Picasso.get().load(qrCodeUrl).into(qrImageView);
+
+        dialog.show();
     }
 }
