@@ -39,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
     private Button addWalletButton, sendButton, receiveButton;
     private View cardView;
     private TextView usernameTextView, walletIdTextView, walletBalanceTextView;
+    String walletId;
 
     // Predefined wallet addresses and private keys
     private static final String[][] WALLET_PAIRS = {
@@ -81,10 +82,18 @@ public class MainActivity extends AppCompatActivity {
         addWalletButton.setOnClickListener(view -> createWalletForUser());
 
         receiveButton.setOnClickListener(view -> displayQRCode());
+
+
     }
 
     private void checkWalletStatus() {
-        String userId = auth.getCurrentUser().getUid(); // Get current user ID
+        if (auth.getCurrentUser() == null) {
+            Toast.makeText(this, "User is not authenticated", Toast.LENGTH_SHORT).show();
+            finish(); // Redirect to login or exit
+            return;
+        }
+        String userId = auth.getCurrentUser().getUid();
+
         DocumentReference userRef = firestore.collection("Users").document(userId);
 
         userRef.get().addOnCompleteListener(task -> {
@@ -92,6 +101,10 @@ public class MainActivity extends AppCompatActivity {
                 DocumentSnapshot document = task.getResult();
                 if (document != null && document.exists()) {
                     String walletId = document.getString("walletId");
+                    if (walletId == null || walletId.isEmpty()) {
+                        Log.e("Firestore", "Wallet ID is missing");
+                        return;
+                    }
                     String walletBalance = document.getString("walletBalance");
 
                     if (walletId != null && !walletId.isEmpty()) {
@@ -107,8 +120,8 @@ public class MainActivity extends AppCompatActivity {
                         if (walletBalance != null && !walletBalance.isEmpty()) {
                             walletBalanceTextView.setText("Balance: " + walletBalance);
                         } else {
-                            walletBalanceTextView.setText("Balance: Fetching...");
-                            updateWalletBalance(walletId); // Fetch the balance from Ethereum if not set
+                            updateWalletBalance(walletId);
+                            //walletBalanceTextView.setText("Balance: Fetching...");
                         }
                     } else {
                         // No wallet - show Add Wallet button
@@ -217,38 +230,45 @@ public class MainActivity extends AppCompatActivity {
         ethereumService.checkBalance(walletId, new EthereumService.BalanceCallback() {
             @Override
             public void onBalanceFetched(String balance) {
-                // Update the UI with the fetched balance
-                walletBalanceTextView.setText("Balance: " + balance);
+                // Run on UI thread since UI updates must happen on the main thread
+                runOnUiThread(() -> walletBalanceTextView.setText("Balance: " + balance + " ETH"));
+
+                Toast.makeText(MainActivity.this, "Balance received: " + balance + " ETH", Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void onError(String error) {
-                // Handle error case
-                walletBalanceTextView.setText("Balance: Error fetching");
-                Toast.makeText(MainActivity.this, error, Toast.LENGTH_SHORT).show();
+                // Handle errors
+                runOnUiThread(() -> {
+                    // Show the error message in a Toast
+                    Toast.makeText(MainActivity.this, "Error fetching balance: " + error, Toast.LENGTH_SHORT).show();
+
+                    // Set the full error message to the wallet balance TextView
+                    walletBalanceTextView.setText("Error: " + error);
+                });
             }
         });
     }
 
     private void displayQRCode() {
         String userId = auth.getCurrentUser().getUid();
-        DocumentReference userRef = firestore.collection("Users").document(userId);
+        StorageReference qrCodeRef = FirebaseStorage.getInstance().getReference().child("WalletQRs/" + userId + ".png");
 
-        userRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                DocumentSnapshot document = task.getResult();
-                if (document.exists()) {
-                    String qrCodeUrl = document.getString("qrCodeUrl");
-                    if (qrCodeUrl != null && !qrCodeUrl.isEmpty()) {
-                        // Load QR code image using an image loading library like Picasso
-                        ImageView qrCodeImageView = findViewById(R.id.qr_code_image_view);
-                        Picasso.get().load(qrCodeUrl).into(qrCodeImageView);
-                    }
-                }
-            } else {
-                Toast.makeText(MainActivity.this, "Error fetching QR code", Toast.LENGTH_SHORT).show();
-            }
-        });
+        qrCodeRef.getBytes(1024 * 1024) // Adjust size as needed
+                .addOnSuccessListener(bytes -> {
+                    Bitmap qrBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+
+                    // Show QR code in a dialog
+                    Dialog qrDialog = new Dialog(MainActivity.this);
+                    qrDialog.setContentView(R.layout.qr_code_image_view);
+
+                    ImageView qrImageView = qrDialog.findViewById(R.id.qr_code_image_view);
+                    qrImageView.setImageBitmap(qrBitmap);
+
+                    qrDialog.show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(MainActivity.this, "Failed to fetch QR code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
-
 }
