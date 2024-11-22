@@ -43,16 +43,8 @@ public class MainActivity extends AppCompatActivity {
 
     // Predefined wallet addresses and private keys
     private static final String[][] WALLET_PAIRS = {
-            {"0xEC3b13C00Af3d785f314e722db02b1d31C4DbD4c", "0x14c52e5f82204048bddefed194465cc751bd94b5e9219376001c5f7c127ac724"},
-            {"0x7881633923e5d009FD62CcEA0E9357760629e6C2", "0x4d99090dd6e6d04458c6c666eeed4fb03b64ba7972f3fba6f7b9f65e48e67a39"},
-            {"0x14786531B91AC30a6317A55ff9D7b3Fe80940ab4", "0xe63863b5eac76e7ac10e073111ab1898ad3b0526da87b06d3ba2947c4435630b"},
-            {"0x70877847006e697D37C0d1fdAeD574D2D23DF0da", "0x5a94790632e1e256613a94bd2cb3211d5388a8cd2cb1662d6f71b55abf9778a6"},
-            {"0xF78C6639C72CBfa407695C3F9eaFA5DDC13CC61b", "0xa618c61e15d686c018924be503af835a425d1a5c47334949702be4391d34925a"},
-            {"0x86C0515FcD1b051370DBA23e2F5b00cf037d75e8", "0x3845da94875c553b51a93c80f12274b2b726a5924f9f36fa9dbb8a0815880140"},
-            {"0xF10a0A90B594223956489E7eE0CE7e1231F4c5e5", "0x7fc620773dd16fbcdea5247517c8739f6bfc9a2351846b98fbd3156fe66ccb1e"},
-            {"0x47c81Fa6C7975AD007cfF3d377E5d396D4F47580", "0x822e491e58321cac436725fcfea5ea8d799dde31429b882508afa80375894ab2"},
-            {"0xB0FE44a31c15EaCFc3155840C8f358975D58aAC7", "0xd71d97abb1eaadc88b51b3071d228895eb1b10995891c0ae45f0a4148cef9dec"},
-            {"0xB0FE44a31c15EaCFc3155840C8f358975D58aAC7", "0xd71d97abb1eaadc88b51b3071d228895eb1b10995891c0ae45f0a4148cef9dec"}
+            {"0xD8A423bc11E4F2A48d388A7CdF27279D7852c7f3", "0xa05edfb0b323b3a0f44e898f0c1b74f073e5bff6918b366145769de1cd44acac"},
+            {"0x279bD993B47bb9adb6056804124be104420581F0", "0xf0a136da74a3507c7780cfac49c10eb21fa616e57c0935994c55918cc8cca755"}
     };
 
     @Override
@@ -87,13 +79,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkWalletStatus() {
-        if (auth.getCurrentUser() == null) {
-            Toast.makeText(this, "User is not authenticated", Toast.LENGTH_SHORT).show();
-            finish(); // Redirect to login or exit
-            return;
-        }
-        String userId = auth.getCurrentUser().getUid();
-
+        String userId = auth.getCurrentUser().getUid(); // Get current user ID
         DocumentReference userRef = firestore.collection("Users").document(userId);
 
         userRef.get().addOnCompleteListener(task -> {
@@ -101,10 +87,6 @@ public class MainActivity extends AppCompatActivity {
                 DocumentSnapshot document = task.getResult();
                 if (document != null && document.exists()) {
                     String walletId = document.getString("walletId");
-                    if (walletId == null || walletId.isEmpty()) {
-                        Log.e("Firestore", "Wallet ID is missing");
-                        return;
-                    }
                     String walletBalance = document.getString("walletBalance");
 
                     if (walletId != null && !walletId.isEmpty()) {
@@ -120,8 +102,8 @@ public class MainActivity extends AppCompatActivity {
                         if (walletBalance != null && !walletBalance.isEmpty()) {
                             walletBalanceTextView.setText("Balance: " + walletBalance);
                         } else {
-                            updateWalletBalance(walletId);
-                            //walletBalanceTextView.setText("Balance: Fetching...");
+                            walletBalanceTextView.setText("Balance: Fetching...");
+                            updateWalletBalance(walletId); // Fetch the balance from Ethereum if not set
                         }
                     } else {
                         // No wallet - show Add Wallet button
@@ -151,12 +133,12 @@ public class MainActivity extends AppCompatActivity {
         String userId = auth.getCurrentUser().getUid();
         DocumentReference userRef = firestore.collection("Users").document(userId);
 
-        // Assign one of the 10 predefined wallet pairs
+        // Assign one of the 2 predefined wallet pairs
         int userIndex = getUserIndex();
         String walletId = WALLET_PAIRS[userIndex][0];
         String privateKey = WALLET_PAIRS[userIndex][1];
 
-        // Create a HashMap to store the wallet data without a default balance
+        // Create a HashMap to store the wallet data
         Map<String, Object> walletData = new HashMap<>();
         walletData.put("walletId", walletId);
         walletData.put("privateKey", privateKey); // Store private key in hexadecimal format
@@ -176,14 +158,13 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "Failed to create wallet: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
 
+        // Generate and upload QR code for the wallet
         generateAndUploadQRCode(walletId, privateKey, userId);
     }
 
     private int getUserIndex() {
-        // Logic to assign one of the predefined 10 wallet pairs to each user
-        int userCount = 10;  // Total available wallets
-        int randomIndex = (int) (Math.random() * userCount);
-        return randomIndex;
+        // Logic to assign one of the predefined wallet pairs to each user
+        return (int) (Math.random() * WALLET_PAIRS.length); // Get a random wallet pair from available ones
     }
 
     private void generateAndUploadQRCode(String walletId, String privateKey, String userId) {
