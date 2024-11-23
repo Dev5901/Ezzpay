@@ -57,7 +57,7 @@ public class EthereumService {
 
     // Constructor to initialize Web3j and connect to Infura
     public EthereumService() {
-        web3j = Web3j.build(new HttpService("http://10.0.2.2:7545"));
+            web3j = Web3j.build(new HttpService("http://192.168.2.191:9769"));
     }
 
     // Method to get the current balance of the wallet address
