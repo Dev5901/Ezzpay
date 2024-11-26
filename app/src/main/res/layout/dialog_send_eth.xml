@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/receiver_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Receiver Address"
+        android:textSize="16sp"
+        android:textColor="@color/black"
+        android:paddingBottom="8dp" />
+
+    <EditText
+        android:id="@+id/eth_amount_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter Amount in ETH"
+        android:inputType="numberDecimal"
+        android:padding="8dp" />
+
+    <Button
+        android:id="@+id/send_eth_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Send ETH"
+        android:layout_marginTop="16dp" />
+</LinearLayout>

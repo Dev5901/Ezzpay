@@ -29,8 +29,20 @@ import com.journeyapps.barcodescanner.BarcodeEncoder;
 import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+
+import android.content.Intent;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+import org.web3j.crypto.Credentials;
+import org.web3j.tx.Transfer;
+import org.web3j.utils.Convert;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
+import org.web3j.tx.gas.DefaultGasProvider;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -75,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
 
         receiveButton.setOnClickListener(view -> displayQRCode());
 
-
+        // Setup send button functionality
+        setupSendButton();
     }
 
     private void checkWalletStatus() {
@@ -119,7 +132,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
 
     private String maskWalletId(String walletId) {
         if (walletId.length() > 4) {
@@ -169,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void generateAndUploadQRCode(String walletId, String privateKey, String userId) {
         // Generate QR code from wallet data
-        String qrData = walletId + "," + privateKey;
+        String qrData = walletId;
         Bitmap qrCode = generateQRCodeBitmap(qrData);
 
         // Convert Bitmap to ByteArrayOutputStream to upload to Firebase
@@ -202,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
             return encoder.createBitmap(bitMatrix);
         } catch (Exception e) {
             e.printStackTrace();
+
             return null;
         }
     }
@@ -231,27 +244,105 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-//    private void displayQRCode() {
-//        String userId = auth.getCurrentUser().getUid();
-//        StorageReference qrCodeRef = FirebaseStorage.getInstance().getReference().child("WalletQRs/" + userId + ".png");
-//
-//        qrCodeRef.getBytes(1024 * 1024) // Adjust size as needed
-//                .addOnSuccessListener(bytes -> {
-//                    Bitmap qrBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-//
-//                    // Show QR code in a dialog
-//                    Dialog qrDialog = new Dialog(MainActivity.this);
-//                    qrDialog.setContentView(R.layout.qr_code_image_view);
-//
-//                    ImageView qrImageView = qrDialog.findViewById(R.id.qr_code_image_view);
-//                    qrImageView.setImageBitmap(qrBitmap);
-//
-//                    qrDialog.show();
-//                })
-//                .addOnFailureListener(e -> {
-//                    Toast.makeText(MainActivity.this, "Failed to fetch QR code: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-//                });
-//    }
+    private void setupSendButton() {
+        sendButton.setOnClickListener(view -> {
+            // Start QR code scanner to fetch the receiver's wallet address
+            IntentIntegrator integrator = new IntentIntegrator(this);
+            integrator.setPrompt("Scan Receiver's Wallet QR Code");
+            integrator.setOrientationLocked(true);
+            integrator.setBeepEnabled(true);
+            integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
+            integrator.initiateScan();
+        });
+    }
+
+    // Handle QR Code Result
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (result != null) {
+            if (result.getContents() != null) {
+                // QR code content (receiver's wallet address)
+                String receiverAddress = result.getContents();
+                showSendDialog(receiverAddress);
+            } else {
+                Toast.makeText(this, "Scan cancelled", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    // Show Dialog to Enter Amount and Send Ethereum
+    private void showSendDialog(String receiverAddress) {
+        Dialog sendDialog = new Dialog(this);
+        sendDialog.setContentView(R.layout.dialog_send_eth); // Create a custom layout file: dialog_send_eth.xml
+
+        TextView receiverTextView = sendDialog.findViewById(R.id.receiver_address);
+        receiverTextView.setText("Receiver: " + receiverAddress);
+
+        TextView amountInput = sendDialog.findViewById(R.id.eth_amount_input);
+        Button sendEthButton = sendDialog.findViewById(R.id.send_eth_button);
+
+        sendEthButton.setOnClickListener(view -> {
+            String amountText = amountInput.getText().toString();
+            if (amountText.isEmpty()) {
+                Toast.makeText(this, "Enter an amount", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            BigDecimal amount = new BigDecimal(amountText);
+            sendEthereum(receiverAddress, amount);
+            sendDialog.dismiss();
+        });
+
+        sendDialog.show();
+    }
+
+    // Send Ethereum
+    private void sendEthereum(String receiverAddress, BigDecimal amount) {
+        // Sender's private key (from Firebase or local storage)
+        String userId = auth.getCurrentUser().getUid();
+        firestore.collection("Users").document(userId).get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult().exists()) {
+                String privateKey = "0xf0a136da74a3507c7780cfac49c10eb21fa616e57c0935994c55918cc8cca755";
+                //task.getResult().getString("privateKey");
+
+                new Thread(() -> {
+                    try {
+                        // Initialize Web3j
+                        Web3j web3j = Web3j.build(new HttpService("http://10.0.2.2:7545")); // Ganache RPC URL
+
+                        // Load sender's credentials
+                        Credentials credentials = Credentials.create(privateKey);
+
+                        // Send transaction
+                        TransactionReceipt receipt = Transfer.sendFunds(
+                                web3j,
+                                credentials,
+                                receiverAddress,
+                                amount,
+                                Convert.Unit.ETHER
+                        ).send();
+
+                        runOnUiThread(() -> {
+                            // Display transaction confirmation
+                            String confirmationMsg = "Transaction Successful!\nHash: " + receipt.getTransactionHash();
+                            Toast.makeText(this, confirmationMsg, Toast.LENGTH_LONG).show();
+                            Log.d("TransactionReceipt", receipt.toString());
+                        });
+                    } catch (Exception e) {
+                        runOnUiThread(() -> {
+                            Toast.makeText(this, "Transaction Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            Log.e("SendEthereumError", e.getMessage(), e);
+                        });
+                    }
+                }).start();
+            } else {
+                Toast.makeText(this, "Failed to fetch sender's wallet", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 
     private void displayQRCode() {
         String userId = auth.getCurrentUser().getUid();
@@ -283,3 +374,4 @@ public class MainActivity extends AppCompatActivity {
         dialog.show();
     }
 }
+
