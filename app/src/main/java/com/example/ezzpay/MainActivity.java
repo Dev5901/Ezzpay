@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
     private FirebaseAuth auth;
     private FirebaseFirestore firestore;
-    private Button addWalletButton, sendButton, receiveButton;
+    private Button addWalletButton, sendButton, receiveButton, historyButton;
     private View cardView;
     private TextView usernameTextView, walletIdTextView, walletBalanceTextView;
     String walletId;
@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
         walletBalanceTextView = findViewById(R.id.wallet_balance);
         sendButton = findViewById(R.id.send_button);
         receiveButton = findViewById(R.id.receive_button);
+        historyButton = findViewById(R.id.history_button);
         checkWalletStatus();
 
         // Handle Add Wallet Button Click
@@ -89,6 +90,15 @@ public class MainActivity extends AppCompatActivity {
 
         // Setup send button functionality
         setupSendButton();
+        setupHistoryButton();
+    }
+
+    private void setupHistoryButton() {
+        historyButton.setOnClickListener(view -> {
+            // Navigate to HistoryActivity
+            Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void checkWalletStatus() {
@@ -301,13 +311,18 @@ public class MainActivity extends AppCompatActivity {
 
     // Send Ethereum
     private void sendEthereum(String receiverAddress, BigDecimal amount) {
-        // Sender's private key (from Firebase or local storage)
+        // Fetch the current user's private key from Firestore
         String userId = auth.getCurrentUser().getUid();
         firestore.collection("Users").document(userId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult().exists()) {
-                String privateKey = "0xf0a136da74a3507c7780cfac49c10eb21fa616e57c0935994c55918cc8cca755";
-                //task.getResult().getString("privateKey");
+                String privateKey = task.getResult().getString("privateKey"); // Fetch privateKey from Firestore
 
+                if (privateKey == null || privateKey.isEmpty()) {
+                    Toast.makeText(this, "Private key not found!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                // Start a new thread for the transaction
                 new Thread(() -> {
                     try {
                         // Initialize Web3j
@@ -330,6 +345,9 @@ public class MainActivity extends AppCompatActivity {
                             String confirmationMsg = "Transaction Successful!\nHash: " + receipt.getTransactionHash();
                             Toast.makeText(this, confirmationMsg, Toast.LENGTH_LONG).show();
                             Log.d("TransactionReceipt", receipt.toString());
+
+                            // Update the balance on the Android screen
+                            updateWalletBalance(credentials.getAddress());
                         });
                     } catch (Exception e) {
                         runOnUiThread(() -> {
@@ -339,10 +357,11 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }).start();
             } else {
-                Toast.makeText(this, "Failed to fetch sender's wallet", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Failed to fetch sender's wallet information!", Toast.LENGTH_SHORT).show();
             }
         });
     }
+
 
     private void displayQRCode() {
         String userId = auth.getCurrentUser().getUid();

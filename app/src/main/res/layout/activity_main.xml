@@ -104,15 +104,27 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
+<!--    <com.google.android.material.bottomnavigation.BottomNavigationView-->
+<!--        android:id="@+id/bottom_navigation"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:background="@color/cardRed"-->
+<!--        app:itemIconTint="@color/offWhite"-->
+<!--        app:itemTextColor="@color/darkGrey"-->
+<!--        app:menu="@menu/bottom_navigation_menu" />-->
+
+    <Button
+        android:id="@+id/history_button"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:background="@color/cardRed"
-        app:itemIconTint="@color/offWhite"
-        app:itemTextColor="@color/darkGrey"
-        app:menu="@menu/bottom_navigation_menu" />
+        android:layout_alignParentEnd="true"
+        android:layout_margin="16dp"
+        android:text="History"
+        android:background="@color/black"
+        android:textColor="@color/white" />
+
 
 
 </RelativeLayout>
