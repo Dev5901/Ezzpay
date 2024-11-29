@@ -1,10 +1,13 @@
 package com.example.ezzpay;
+import android.content.Intent;
+import android.view.MenuItem;
 
 import android.app.Dialog;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -14,6 +17,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
@@ -91,24 +95,77 @@ public class MainActivity extends AppCompatActivity {
         walletBalanceTextView = findViewById(R.id.wallet_balance);
         sendButton = findViewById(R.id.send_button);
         receiveButton = findViewById(R.id.receive_button);
-        historyButton = findViewById(R.id.history_button);
+
         checkWalletStatus();
 
         // Handle Add Wallet Button Click
         addWalletButton.setOnClickListener(view -> createWalletForUser());
 
         receiveButton.setOnClickListener(view -> displayQRCode());
+        Button profileButton = findViewById(R.id.profile_button);
+        Button historyButton = findViewById(R.id.history_button);
+        Button signOutButton = findViewById(R.id.sign_out_button);
 
+        profileButton.setOnClickListener(view -> showProfile());
+        historyButton.setOnClickListener(view -> setupHistoryButton());
+        signOutButton.setOnClickListener(view -> signOutUser());
         // Setup send button functionality
         setupSendButton();
-        setupHistoryButton();
+        //setupHistoryButton();
+    }
+
+    private void signOutUser() {
+        FirebaseAuth.getInstance().signOut();
+        // Navigate to the login or home screen
+        Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+        startActivity(intent);
     }
 
     private void setupHistoryButton() {
-        historyButton.setOnClickListener(view -> {
             // Navigate to HistoryActivity
             Intent intent = new Intent(MainActivity.this, HistoryActivity.class);
             startActivity(intent);
+    }
+
+    private void showProfile() {
+        // Get the current user's ID
+        String userId = auth.getCurrentUser().getUid();
+        DocumentReference userRef = firestore.collection("Users").document(userId);
+
+        // Fetch the user data from Firestore
+        userRef.get().addOnCompleteListener(task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                DocumentSnapshot document = task.getResult();
+
+                // Extract user information from Firestore document
+                String fullName = document.getString("fullName");
+                String email = document.getString("email");
+                String phone = document.getString("contactNumber");
+                String walletId = document.getString("walletId");
+
+
+                // Prepare user information to display
+                String profileInfo = "Name: " + fullName + "\n"
+                        + "Email: " + email + "\n"
+                        + "Phone: " + phone + "\n"
+                        + "Wallet ID: " + walletId + "\n";
+
+                // Create and display the dialog
+                Dialog profileDialog = new Dialog(this);
+                profileDialog.setContentView(R.layout.dialog_profile_info); // Create a layout file for the dialog
+                profileDialog.setCancelable(true);
+
+                TextView profileTextView = profileDialog.findViewById(R.id.profile_info_text_view);
+                profileTextView.setText(profileInfo);
+
+                Button closeButton = profileDialog.findViewById(R.id.close_button);
+                closeButton.setOnClickListener(view -> profileDialog.dismiss());
+
+                profileDialog.show();
+            } else {
+                Toast.makeText(this, "Failed to fetch profile information.", Toast.LENGTH_SHORT).show();
+                Log.e("showProfile", "Error fetching profile info: " + task.getException().getMessage());
+            }
         });
     }
 
