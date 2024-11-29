@@ -1,9 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView android:id="@+id/transaction_text"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp"
-    android:textColor="@color/black"
+    android:orientation="vertical"
+    android:padding="12dp"
     android:background="@color/white"
-    android:text="Transaction Hash"
-    xmlns:android="http://schemas.android.com/apk/res/android" />
+    android:layout_marginBottom="8dp"
+    android:elevation="2dp">
+
+    <!-- Transaction Label -->
+    <TextView
+        android:id="@+id/transaction_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Transaction Hash"
+        android:textColor="@color/black"
+        android:textSize="14sp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp"
+        android:textStyle="bold"/>
+
+    <!-- Transaction Details -->
+    <TextView
+        android:id="@+id/transaction_details"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textColor="@color/darkGrey"
+        android:textSize="12sp"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingBottom="8dp"/>
+
+</LinearLayout>

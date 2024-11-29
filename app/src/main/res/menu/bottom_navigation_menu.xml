@@ -1,14 +1,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item
-        android:id="@+id/action_home"
-        android:icon="@drawable/round_home_24"
-        android:title="Home" />
+    <!-- Left: Profile button -->
     <item
         android:id="@+id/action_profile"
         android:icon="@drawable/round_account_circle_24"
         android:title="Profile" />
+
+    <!-- Center: History button -->
     <item
         android:id="@+id/action_history"
         android:icon="@drawable/round_history_arrows_24"
         android:title="History" />
+
+    <!-- Right: Sign Out button -->
+    <item
+        android:id="@+id/action_sign_out"
+        android:icon="@drawable/baseline_exit_to_app_24"
+        android:title="Sign Out" />
 </menu>

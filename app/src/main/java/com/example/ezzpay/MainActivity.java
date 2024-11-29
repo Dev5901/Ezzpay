@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -30,7 +31,9 @@ import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import android.content.Intent;
@@ -56,7 +59,15 @@ public class MainActivity extends AppCompatActivity {
     // Predefined wallet addresses and private keys
     private static final String[][] WALLET_PAIRS = {
             {"0xD8A423bc11E4F2A48d388A7CdF27279D7852c7f3", "0xa05edfb0b323b3a0f44e898f0c1b74f073e5bff6918b366145769de1cd44acac"},
-            {"0x279bD993B47bb9adb6056804124be104420581F0", "0xf0a136da74a3507c7780cfac49c10eb21fa616e57c0935994c55918cc8cca755"}
+            {"0x279bD993B47bb9adb6056804124be104420581F0", "0xf0a136da74a3507c7780cfac49c10eb21fa616e57c0935994c55918cc8cca755"},
+            {"0x332646E38b210ecaF069140e873CcDb7f8d72b4d","0xcb0fbee26eb814f7e122f39f8d89808e362666b09208e8ed9cfaeeae095caec8"},
+            {"0x76590844C4678F4baF661aA8DdCC849F2FA65D15","0x71551944392f6b4908a3a24fe2db746729d6e2879821ea205d3ca6960b9a0715"},
+            {"0xa0315015732dC28528071ffd7D2f19EA85C38570","0x4f4d5924b96669913ce56d06f7e3de9983f8d73122e1d3bafc50bdc9ee4a585b"},
+            {"0x9E6Aa77347c8C96Ac8E683c8B73d670d332D19Fd","0x4e153ab88b12a38fc7231173ac255c66b561680f4bdf9ca3682fab18644f76b6"},
+            {"0x336273DD20432f79f8f858244a74C49F5b4280Ce","0x7a1b7b0b38bd30a141a76bb83ee5ef95fd1ff87e5aee299fb7fb9bf83ebd37b3"},
+            {"0x36CC2F8fCba614022C4d18279060bdc3d5817c6B","0x1227d522b99f1a41ddf8e93fec87e00015a50f77b58c69c94ee0d5d7f09a88c6"},
+            {"0xE63Ffe3540885C630639548bBE0D3299A524fe40","0xc3babbef0a433ad34281259f6ac13f69b47fd067d92d7b85c9f8e238da10e892"},
+            {"0xd053876aF32A41aC41A360086c9a6d38a3a44a9C","0x6e7edf4ccfc8e1e3921e95cf82b80d415c7bc492f896f1d5d47f7f107a0ac75e"}
     };
 
     @Override
@@ -184,10 +195,41 @@ public class MainActivity extends AppCompatActivity {
         generateAndUploadQRCode(walletId, privateKey, userId);
     }
 
+
+//    private int getUserIndex() {
+//        // Logic to assign one of the predefined wallet pairs to each user
+//        return (int) (Math.random() * WALLET_PAIRS.length); // Get a random wallet pair from available ones
+//    }
+private List<Integer> assignedWalletIndexes = new ArrayList<>();
+
     private int getUserIndex() {
-        // Logic to assign one of the predefined wallet pairs to each user
-        return (int) (Math.random() * WALLET_PAIRS.length); // Get a random wallet pair from available ones
+        // Get the list of unassigned wallet indexes
+        List<Integer> availableIndexes = new ArrayList<>();
+        for (int i = 0; i < WALLET_PAIRS.length; i++) {
+            if (!assignedWalletIndexes.contains(i)) {
+                availableIndexes.add(i);
+            }
+        }
+
+        // If no wallets are available (all have been assigned), reset the assigned list
+        if (availableIndexes.isEmpty()) {
+            assignedWalletIndexes.clear();
+            availableIndexes = new ArrayList<>();
+            for (int i = 0; i < WALLET_PAIRS.length; i++) {
+                availableIndexes.add(i);
+            }
+        }
+
+        // Select a random index from the available ones
+        int randomIndex = (int) (Math.random() * availableIndexes.size());
+        int assignedIndex = availableIndexes.get(randomIndex);
+
+        // Mark this wallet pair as assigned
+        assignedWalletIndexes.add(assignedIndex);
+
+        return assignedIndex;
     }
+
 
     private void generateAndUploadQRCode(String walletId, String privateKey, String userId) {
         // Generate QR code from wallet data
