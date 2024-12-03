@@ -1,0 +1,8 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/appBg" />
+    <item>
+        <bitmap
+            android:src="@drawable/ezzpay_logo"
+            android:gravity="center" />
+    </item>
+</layer-list>

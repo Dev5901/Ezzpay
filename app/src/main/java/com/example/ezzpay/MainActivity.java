@@ -1,5 +1,7 @@
 package com.example.ezzpay;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.view.MenuItem;
 
 import android.app.Dialog;
@@ -16,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -102,13 +105,37 @@ public class MainActivity extends AppCompatActivity {
         addWalletButton.setOnClickListener(view -> createWalletForUser());
 
         receiveButton.setOnClickListener(view -> displayQRCode());
-        Button profileButton = findViewById(R.id.profile_button);
-        Button historyButton = findViewById(R.id.history_button);
-        Button signOutButton = findViewById(R.id.sign_out_button);
 
-        profileButton.setOnClickListener(view -> showProfile());
-        historyButton.setOnClickListener(view -> setupHistoryButton());
-        signOutButton.setOnClickListener(view -> signOutUser());
+//        Button profileButton = findViewById(R.id.action_profile);
+//        Button historyButton = findViewById(R.id.action_history);
+//        Button signOutButton = findViewById(R.id.action_sign_out);
+//
+//        profileButton.setOnClickListener(view -> showProfile());
+//        historyButton.setOnClickListener(view -> setupHistoryButton());
+//        signOutButton.setOnClickListener(view -> signOutUser());
+
+        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+
+        bottomNavigationView.setOnItemSelectedListener(new BottomNavigationView.OnItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                int itemId = item.getItemId();
+
+                if (itemId == R.id.action_profile) {
+                    showProfile();
+                    return true;
+                } else if (itemId == R.id.action_history) {
+                    setupHistoryButton();
+                    return true;
+                } else if (itemId == R.id.action_sign_out) {
+                    signOutUser();
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        });
+
         // Setup send button functionality
         setupSendButton();
         //setupHistoryButton();
@@ -291,7 +318,7 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
     private void generateAndUploadQRCode(String walletId, String privateKey, String userId) {
         // Generate QR code from wallet data
         String qrData = walletId;
-        Bitmap qrCode = generateQRCodeBitmap(qrData);
+        Bitmap qrCode = generateQRCodeBitmap(qrData, MainActivity.this);
 
         // Convert Bitmap to ByteArrayOutputStream to upload to Firebase
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -314,19 +341,51 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
         });
     }
 
-    private Bitmap generateQRCodeBitmap(String data) {
-        try {
-            MultiFormatWriter writer = new MultiFormatWriter();
-            BitMatrix bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, 500, 500);
+//    private Bitmap generateQRCodeBitmap(String data) {
+//        try {
+//            MultiFormatWriter writer = new MultiFormatWriter();
+//            BitMatrix bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, 500, 500);
+//
+//            BarcodeEncoder encoder = new BarcodeEncoder();
+//            return encoder.createBitmap(bitMatrix);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//
+//            return null;
+//        }
+//    }
 
-            BarcodeEncoder encoder = new BarcodeEncoder();
-            return encoder.createBitmap(bitMatrix);
+    private Bitmap generateQRCodeBitmap(String data, Context context) {
+        try {
+            // Define QR code size
+            int qrCodeSize = 500;
+
+            // Create a BitMatrix for the QR code
+            MultiFormatWriter writer = new MultiFormatWriter();
+            BitMatrix bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, qrCodeSize, qrCodeSize);
+
+            // Retrieve colors from resources
+            int foregroundColor = ContextCompat.getColor(context, R.color.offWhite);
+            int backgroundColor = ContextCompat.getColor(context, R.color.appBg);
+
+            // Create a Bitmap with custom colors
+            Bitmap bitmap = Bitmap.createBitmap(qrCodeSize, qrCodeSize, Bitmap.Config.ARGB_8888);
+
+            // Fill the Bitmap based on the BitMatrix
+            for (int x = 0; x < qrCodeSize; x++) {
+                for (int y = 0; y < qrCodeSize; y++) {
+                    bitmap.setPixel(x, y, bitMatrix.get(x, y) ? foregroundColor : backgroundColor);
+                }
+            }
+
+            return bitmap;
         } catch (Exception e) {
             e.printStackTrace();
-
             return null;
         }
     }
+
+
 
     private void updateWalletBalance(String walletId) {
         EthereumService ethereumService = new EthereumService();
@@ -336,7 +395,7 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
                 // Run on UI thread since UI updates must happen on the main thread
                 runOnUiThread(() -> walletBalanceTextView.setText("Balance: " + balance + " ETH"));
 
-                Toast.makeText(MainActivity.this, "Balance received: " + balance + " ETH", Toast.LENGTH_LONG).show();
+
             }
 
             @Override
@@ -364,6 +423,7 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
             integrator.initiateScan();
         });
     }
+
 
     // Handle QR Code Result
     @Override

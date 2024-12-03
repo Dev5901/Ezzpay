@@ -9,10 +9,10 @@
 
     <TextView
         android:id="@+id/profile_info_text_view"
-        android:layout_width="match_parent"
+        android:layout_width="400dp"
         android:layout_height="wrap_content"
         android:textSize="20sp"
-        android:textColor="@android:color/black"
+        android:textColor="@color/offWhite"
         android:padding="30dp" />
 
     <Button
