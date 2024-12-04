@@ -3,29 +3,38 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="30dp"
+    android:background="@drawable/rounded_dialog_background">
 
     <TextView
         android:id="@+id/receiver_address"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Receiver Address"
-        android:textSize="16sp"
-        android:textColor="@color/black"
-        android:paddingBottom="8dp" />
+        android:textSize="18dp"
+        android:textColor="@color/offWhite"
+        android:paddingBottom="40dp" />
 
     <EditText
         android:id="@+id/eth_amount_input"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:hint="Enter Amount in ETH"
         android:inputType="numberDecimal"
-        android:padding="8dp" />
+        android:padding="8dp"
+        android:textColor="@color/offWhite"
+        android:textColorHint="@color/offWhite"
+        android:background="@drawable/custom_edittext"
+        android:drawableLeft="@drawable/eth_logo"
+        android:drawablePadding="8dp" />
 
     <Button
         android:id="@+id/send_eth_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Send ETH"
-        android:layout_marginTop="16dp" />
+        android:textColor="@color/offWhite"
+        android:layout_marginTop="16dp"
+        android:background="@drawable/btn"/>
+
 </LinearLayout>

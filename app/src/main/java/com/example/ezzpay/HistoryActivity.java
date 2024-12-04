@@ -2,6 +2,7 @@ package com.example.ezzpay;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -38,14 +39,19 @@ public class HistoryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_history);
 
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            getWindow().setStatusBarColor(getResources().getColor(R.color.appBg));
+        }
+
         transactionListView = findViewById(R.id.transaction_list);
         transactions = new ArrayList<>();
         adapter = new TransactionAdapter(this, transactions);
         transactionListView.setAdapter(adapter);
 
         // Connect to Ganache (Running on Local Machine)
-        web3j = Web3j.build(new HttpService("http://10.0.2.2:7545")); // Ganache URL for Android Emulator
+        web3j = Web3j.build(new HttpService("http://192.168.2.192:7545")); // Ganache URL for Android Emulator
         fetchUserWalletAddress();
+
     }
 
     private void fetchUserWalletAddress() {

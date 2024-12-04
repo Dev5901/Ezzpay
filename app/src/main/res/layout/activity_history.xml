@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
-    android:background="@color/lavender">
+    android:background="@color/appBg">
 
     <TextView
         android:id="@+id/history_title"
@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:text="Transaction History"
         android:textSize="24sp"
-        android:textColor="@color/white"
+        android:textColor="@color/offWhite"
         android:textStyle="bold"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
@@ -21,12 +21,12 @@
         android:id="@+id/transaction_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:divider="@color/darkGrey"
+        android:divider="@color/offWhite"
         android:dividerHeight="0.5dp"
-        android:background="@android:color/white"
         android:layout_below="@id/history_title"
         android:layout_marginTop="8dp"
         android:paddingTop="8dp"
+        android:paddingHorizontal="5dp"
         android:clipToPadding="false"/>
 
 </RelativeLayout>

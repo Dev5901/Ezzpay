@@ -40,25 +40,37 @@ package com.example.ezzpay;
 //}
 
 
+import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 import org.web3j.protocol.core.methods.response.EthGetBalance;
+import org.web3j.tx.Transfer;
 import org.web3j.utils.Convert;
 
 import android.os.Handler;
 import android.os.Looper;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class EthereumService {
 
     private Web3j web3j;
 
-    // Constructor to initialize Web3j and connect to Infura
+
     public EthereumService() {
+        web3j = Web3j.build(new HttpService("http://192.168.2.192:7545"));
         //web3j = Web3j.build(new HttpService("http://10.0.2.2:7545"));
-        web3j = Web3j.build(new HttpService("http://10.0.2.2:7545"));
+    }
+
+
+
+    // Callback interface to handle balance response or error
+    public interface BalanceCallback {
+        void onBalanceFetched(String balance);
+        void onError(String error);
     }
 
     // Method to get the current balance of the wallet address
@@ -82,11 +94,42 @@ public class EthereumService {
         }).start(); // Start the thread
     }
 
-    // Callback interface to handle balance response or error
-    public interface BalanceCallback {
-        void onBalanceFetched(String balance);
-        void onError(String error);
+    public interface TransactionCallback {
+        void onSuccess(String transactionHash);
+        void onFailure(String errorMessage);
     }
+
+    // Method to send Ethereum
+    public void sendEthereum(String privateKey, String receiverAddress, BigDecimal amount, TransactionCallback callback) {
+        new Thread(() -> {
+            try {
+                // Load sender's credentials
+                Credentials credentials = Credentials.create(privateKey);
+
+                // Send transaction
+                TransactionReceipt receipt = Transfer.sendFunds(
+                        web3j,
+                        credentials,
+                        receiverAddress,
+                        amount,
+                        Convert.Unit.ETHER
+                ).send();
+
+                // Notify success
+                new Handler(Looper.getMainLooper()).post(() ->
+                        callback.onSuccess(receipt.getTransactionHash())
+                );
+            } catch (Exception e) {
+                // Notify failure
+                new Handler(Looper.getMainLooper()).post(() ->
+                        callback.onFailure("Transaction Failed: " + e.getMessage())
+                );
+            }
+        }).start();
+    }
+
 }
+
+
 
 

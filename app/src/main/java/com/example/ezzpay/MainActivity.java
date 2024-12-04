@@ -2,6 +2,8 @@ package com.example.ezzpay;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.view.MenuItem;
 
 import android.app.Dialog;
@@ -106,14 +108,6 @@ public class MainActivity extends AppCompatActivity {
 
         receiveButton.setOnClickListener(view -> displayQRCode());
 
-//        Button profileButton = findViewById(R.id.action_profile);
-//        Button historyButton = findViewById(R.id.action_history);
-//        Button signOutButton = findViewById(R.id.action_sign_out);
-//
-//        profileButton.setOnClickListener(view -> showProfile());
-//        historyButton.setOnClickListener(view -> setupHistoryButton());
-//        signOutButton.setOnClickListener(view -> signOutUser());
-
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
 
         bottomNavigationView.setOnItemSelectedListener(new BottomNavigationView.OnItemSelectedListener() {
@@ -170,7 +164,6 @@ public class MainActivity extends AppCompatActivity {
                 String phone = document.getString("contactNumber");
                 String walletId = document.getString("walletId");
 
-
                 // Prepare user information to display
                 String profileInfo = "Name: " + fullName + "\n"
                         + "Email: " + email + "\n"
@@ -182,8 +175,24 @@ public class MainActivity extends AppCompatActivity {
                 profileDialog.setContentView(R.layout.dialog_profile_info); // Create a layout file for the dialog
                 profileDialog.setCancelable(true);
 
+                if (profileDialog.getWindow() != null) {
+                    profileDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                }
+
                 TextView profileTextView = profileDialog.findViewById(R.id.profile_info_text_view);
-                profileTextView.setText(profileInfo);
+
+                // Create a SpannableString to apply line spacing
+                SpannableString spannableString = new SpannableString(profileInfo);
+
+                // Apply line spacing to all except the Wallet ID
+                int walletIdStart = profileInfo.indexOf("Wallet ID:");
+                int walletIdEnd = profileInfo.length();
+
+                // Apply line height to the first part (Name, Email, Phone) with extra spacing
+                spannableString.setSpan(new CustomLineHeightSpan(15), 0, walletIdStart, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                // Set the modified spannable string to the TextView
+                profileTextView.setText(spannableString);
 
                 Button closeButton = profileDialog.findViewById(R.id.close_button);
                 closeButton.setOnClickListener(view -> profileDialog.dismiss());
@@ -195,6 +204,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+
 
     private void checkWalletStatus() {
         String userId = auth.getCurrentUser().getUid(); // Get current user ID
@@ -218,7 +229,7 @@ public class MainActivity extends AppCompatActivity {
                         walletIdTextView.setText("Wallet ID: " + maskedWalletId);
 
                         if (walletBalance != null && !walletBalance.isEmpty()) {
-                            walletBalanceTextView.setText("Balance: " + walletBalance);
+                            runOnUiThread(() -> walletBalanceTextView.setText("Balance: " + walletBalance + " ETH"));
                         } else {
                             walletBalanceTextView.setText("Balance: Fetching...");
                             updateWalletBalance(walletId); // Fetch the balance from Ethereum if not set
@@ -318,7 +329,7 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
     private void generateAndUploadQRCode(String walletId, String privateKey, String userId) {
         // Generate QR code from wallet data
         String qrData = walletId;
-        Bitmap qrCode = generateQRCodeBitmap(qrData, MainActivity.this);
+        Bitmap qrCode = generateQRCodeBitmap(qrData);
 
         // Convert Bitmap to ByteArrayOutputStream to upload to Firebase
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -341,46 +352,17 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
         });
     }
 
-//    private Bitmap generateQRCodeBitmap(String data) {
-//        try {
-//            MultiFormatWriter writer = new MultiFormatWriter();
-//            BitMatrix bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, 500, 500);
-//
-//            BarcodeEncoder encoder = new BarcodeEncoder();
-//            return encoder.createBitmap(bitMatrix);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//
-//            return null;
-//        }
-//    }
 
-    private Bitmap generateQRCodeBitmap(String data, Context context) {
+    private Bitmap generateQRCodeBitmap(String data) {
         try {
-            // Define QR code size
-            int qrCodeSize = 500;
-
-            // Create a BitMatrix for the QR code
             MultiFormatWriter writer = new MultiFormatWriter();
-            BitMatrix bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, qrCodeSize, qrCodeSize);
+            BitMatrix bitMatrix = writer.encode(data, BarcodeFormat.QR_CODE, 500, 500);
 
-            // Retrieve colors from resources
-            int foregroundColor = ContextCompat.getColor(context, R.color.offWhite);
-            int backgroundColor = ContextCompat.getColor(context, R.color.appBg);
-
-            // Create a Bitmap with custom colors
-            Bitmap bitmap = Bitmap.createBitmap(qrCodeSize, qrCodeSize, Bitmap.Config.ARGB_8888);
-
-            // Fill the Bitmap based on the BitMatrix
-            for (int x = 0; x < qrCodeSize; x++) {
-                for (int y = 0; y < qrCodeSize; y++) {
-                    bitmap.setPixel(x, y, bitMatrix.get(x, y) ? foregroundColor : backgroundColor);
-                }
-            }
-
-            return bitmap;
+            BarcodeEncoder encoder = new BarcodeEncoder();
+            return encoder.createBitmap(bitMatrix);
         } catch (Exception e) {
             e.printStackTrace();
+
             return null;
         }
     }
@@ -417,8 +399,8 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
             // Start QR code scanner to fetch the receiver's wallet address
             IntentIntegrator integrator = new IntentIntegrator(this);
             integrator.setPrompt("Scan Receiver's Wallet QR Code");
-            integrator.setOrientationLocked(true);
-            integrator.setBeepEnabled(true);
+            //integrator.setOrientationLocked(true);
+            //integrator.setBeepEnabled(true);
             integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
             integrator.initiateScan();
         });
@@ -470,51 +452,41 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
 
     // Send Ethereum
     private void sendEthereum(String receiverAddress, BigDecimal amount) {
-        // Fetch the current user's private key from Firestore
         String userId = auth.getCurrentUser().getUid();
         firestore.collection("Users").document(userId).get().addOnCompleteListener(task -> {
             if (task.isSuccessful() && task.getResult().exists()) {
-                String privateKey = task.getResult().getString("privateKey"); // Fetch privateKey from Firestore
+                String privateKey = task.getResult().getString("privateKey");
 
                 if (privateKey == null || privateKey.isEmpty()) {
                     Toast.makeText(this, "Private key not found!", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                // Start a new thread for the transaction
-                new Thread(() -> {
-                    try {
-                        // Initialize Web3j
-                        Web3j web3j = Web3j.build(new HttpService("http://10.0.2.2:7545")); // Ganache RPC URL
+                Credentials credentials = Credentials.create(privateKey);
 
-                        // Load sender's credentials
-                        Credentials credentials = Credentials.create(privateKey);
+                // Initialize EthereumService
+                EthereumService ethereumService = new EthereumService();
 
-                        // Send transaction
-                        TransactionReceipt receipt = Transfer.sendFunds(
-                                web3j,
-                                credentials,
-                                receiverAddress,
-                                amount,
-                                Convert.Unit.ETHER
-                        ).send();
-
+                // Send Ethereum
+                ethereumService.sendEthereum(privateKey, receiverAddress, amount, new EthereumService.TransactionCallback() {
+                    @Override
+                    public void onSuccess(String transactionHash) {
+                        String confirmationMsg = "Transaction Successful!\nHash: " + transactionHash;
                         runOnUiThread(() -> {
-                            // Display transaction confirmation
-                            String confirmationMsg = "Transaction Successful!\nHash: " + receipt.getTransactionHash();
-                            Toast.makeText(this, confirmationMsg, Toast.LENGTH_LONG).show();
-                            Log.d("TransactionReceipt", receipt.toString());
+                            Toast.makeText(MainActivity.this, confirmationMsg, Toast.LENGTH_LONG).show();
+                            Log.d("TransactionReceipt", transactionHash);
 
-                            // Update the balance on the Android screen
+                            // Update sender wallet balance (you may want to also run this on the UI thread if UI changes)
                             updateWalletBalance(credentials.getAddress());
                         });
-                    } catch (Exception e) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(this, "Transaction Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                            Log.e("SendEthereumError", e.getMessage(), e);
-                        });
                     }
-                }).start();
+
+                    @Override
+                    public void onFailure(String errorMessage) {
+                        Toast.makeText(MainActivity.this, errorMessage, Toast.LENGTH_LONG).show();
+                        Log.e("SendEthereumError", errorMessage);
+                    }
+                });
             } else {
                 Toast.makeText(this, "Failed to fetch sender's wallet information!", Toast.LENGTH_SHORT).show();
             }
@@ -548,6 +520,11 @@ private List<Integer> assignedWalletIndexes = new ArrayList<>();
 
         // Load and display the QR code from URL
         Picasso.get().load(qrCodeUrl).into(qrImageView);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+
 
         dialog.show();
     }

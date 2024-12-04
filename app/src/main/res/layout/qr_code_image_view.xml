@@ -5,13 +5,13 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="16dp"
-    android:background="?android:attr/windowBackground">
+    android:background="@drawable/rounded_dialog_background">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Your QR Code"
-        android:textColor="@color/appBg"
+        android:textColor="@color/offWhite"
         android:textSize="20sp"
         android:textStyle="bold"
         android:layout_marginBottom="16dp" />
@@ -20,7 +20,6 @@
         android:id="@+id/qr_code_image_view"
         android:layout_width="300dp"
         android:layout_height="300dp"
-        android:background="@drawable/rounded_image_background"
         android:contentDescription="QR Code Image"
         android:clipToOutline="true"
         android:layout_gravity="center"/>
